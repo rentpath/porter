@@ -3,6 +3,8 @@ defmodule Porter.Mixfile do
 
   def project do
     [app: :porter,
+     description: "Porter provides an OTP application that runs the specified system command using the Erlang Port library and then streams the results back to you.",
+     licenses: ~w(MIT),
      version: "0.0.1",
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
