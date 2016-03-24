@@ -1,21 +1,23 @@
 defmodule Porter do
-  use GenServer
 
-  alias Porter.EventManager
-
-  def start_link do
-    {:ok, pid} = GenEvent.start_link([])
-    GenServer.start_link(__MODULE__, [pid])
+  def run(cmd, callbacks) do
+    {:ok, pid} = start_link
+    GenServer.cast(pid, {:run, cmd, callbacks})
   end
 
-  def run(pid, cmd, callback) do
-    GenServer.cast(pid, {:run, cmd, callback})
-  end
-
-  def handle_cast({:run, cmd, callback}, [pid] = state) do
-    GenEvent.add_handler(pid, EventManager, [callback])
-    do_run(cmd, pid)
+  def handle_cast({:add_callback, callback}, state) do
+    Notifier.subscribe(state.events_pid, callback)
     {:noreply, state}
+  end
+
+  def handle_cast({:run, cmd}, state) do
+    do_run(cmd, state.events_pid)
+    {:noreply, state}
+  end
+
+  def handle_cast({:run, cmd, callbacks}, state) do
+    for callback <- callbacks, do: Notifier.subscribe(state.events_pid, callback)
+    handle_cast({:run, cmd}, state)
   end
 
   def handle_cast(request, state) do
@@ -27,24 +29,23 @@ defmodule Porter do
     loop(port, pid)
   end
 
-  defp loop(p, pid, count \\ 0, msgs \\ []) do
+  defp loop(port, pid) do
     receive do
-      {p, data} ->
-        case data do
-          {:data, msg} ->
-            GenEvent.notify(pid, {:ok, {:data, msg}})
-            loop(p, pid, count+1, [msg | msgs])
-          {:exit_status, 0} ->
-            GenEvent.notify(pid, {:ok, {:exit_status, 0}})
-            {:ok, count, Enum.reverse(msgs)}
-          {:exit_status, code} ->
-            GenEvent.notify(pid, {:error, {:exit_status, code}})
-            {:error, code}
-        end
+      {port, data} -> handle_data(port, pid, data)
     end
   end
-end
 
-#{:ok, {:data, msg}}
-#{:ok, {:exit_status, 0}}
-#{:error {:exit_status, code}}
+  defp handle_data(port, pid, data) do
+    case data do
+      {:data, msg} ->
+        notify(pid, {:ok, {:data, msg}})
+        loop(port, pid)
+      {:exit_status, 0} ->
+        notify(pid, {:ok, {:exit_status, 0}})
+      {:exit_status, code} ->
+        notify(pid, {:error, {:exit_status, code}})
+    end
+  end
+
+  defp notify(pid, message), do: Notifier.notify(pid, message)
+end
