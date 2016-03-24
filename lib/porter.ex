@@ -18,14 +18,14 @@ defmodule Porter do
     {:noreply, state}
   end
 
-  def handle_cast({:run, cmd}, state) do
-    do_run(cmd, state.events_pid)
-    {:noreply, state}
-  end
-
   def handle_cast({:run, cmd, callbacks}, state) do
     for callback <- callbacks, do: Notifier.subscribe(state.events_pid, callback)
     handle_cast({:run, cmd}, state)
+  end
+
+  def handle_cast({:run, cmd}, state) do
+    do_run(cmd, state.events_pid)
+    {:noreply, state}
   end
 
   def handle_cast(request, state) do
