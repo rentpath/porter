@@ -1,4 +1,5 @@
 defmodule Porter do
+  use GenServer
 
   def run(cmd, callbacks) do
     {:ok, pid} = start_link
