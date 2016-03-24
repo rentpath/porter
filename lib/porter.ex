@@ -1,5 +1,12 @@
 defmodule Porter do
   use GenServer
+  alias Porter.Notifier
+
+  def start_link do
+    GenServer.start_link(__MODULE__, [Notifier.manager])
+  end
+
+  def init([pid]), do: {:ok, %{events_pid: pid}}
 
   def run(cmd, callbacks) do
     {:ok, pid} = start_link
