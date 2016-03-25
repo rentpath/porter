@@ -7,6 +7,11 @@ defmodule Porter.Notifier do
 
   @doc ~S"""
   Start a GenEvent manager and returns its pid.
+
+  ## Examples
+
+      iex> Porter.Notifier.manager |> is_pid
+      true
   """
   @spec manager :: pid
   def manager do
@@ -32,7 +37,7 @@ defmodule Porter.Notifier do
   end
 
   @doc ~S"""
-  Initialize the Notifier handler by converting the callback in a list to a  map.
+  Initialize the Notifier handler by converting the callback in a list to a map.
   """
   @spec init([fun]) :: {:ok, %{callback: fun}}
   def init([args]) do
